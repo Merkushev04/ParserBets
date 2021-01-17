@@ -1,0 +1,12 @@
+  version: '3'
+
+  services:
+    web:
+      build: .
+      image: parser
+      command: python parser.pydocker
+      volumes:
+        - .:/code
+      ports:
+        - "8005:8005"
+
