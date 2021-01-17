@@ -4,7 +4,7 @@
     web:
       build: .
       image: parser
-      command: python parser.pydocker
+      command: python parser.py
       volumes:
         - .:/code
       ports:
