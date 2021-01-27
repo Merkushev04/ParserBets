@@ -4,6 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import time
+import csv
 
 while 1 < 2:
 
@@ -24,10 +25,11 @@ while 1 < 2:
         src = file.read()
 
     soup = BeautifulSoup(src, "lxml") # указываем к чему применяем парсинг
-    all_games = soup.find_all("a", class_="g-smooth_tr", limit=10) # указываем что ищем по елементу и классу
+    all_games = soup.find_all("a", class_="g-smooth_tr", limit=20) # указываем что ищем по елементу и классу
+    all_games.reverse()
 
     games_hrefs = {}
-    # games_links = set()
+    match_names = set()
 
     count = 0
     for game in all_games: # перебираем ссылки и названия игр
@@ -77,21 +79,37 @@ while 1 < 2:
                             match_voices = soup.find("div", class_="vote-count"). \
                                 find("span", class_="num").text.strip()
 
-                            print(match_data, '\n', 'Время матча:', match_time, '\n', match_name, '\n', match_result, '\n'
-                                  "Ставка зайдет с вероятностью:", match_probability, "\nПроанализировано ресурсов: ", match_voices, '\n'
-                                  )
-
-                            # Отправляем в телеграм прогноз
-                            message = (str(match_data) + '\n' + 'Время матча: ' + str(match_time) + '\n' + str(match_name) + '\n' + '\n' + "*ПРОЗНОЗ*" +'\n' + str(match_result) + '\n' + '\n' +
-                                  "Ставка зайдет с вероятностью: " + str(match_probability) + "\nПроанализировано ресурсов: " + str(match_voices) + '\n' )
-                            send_message(message)
+                            if int(match_voices) < 15: #проверяем на кол-во ответов в форме
+                                break
+                            else:
+                                if match_name in match_names:  # проверяем есть ли ссылка на эту страницу
+                                    print('Такая игра уже была...')
+                                    continue
+                                else:
+                                    # Отправляем в телеграм прогноз
+                                    message = (str(match_data) + '\n' + 'Время матча: ' + str(match_time) + '\n' + str(match_name) + '\n' + '\n' + "*ПРОЗНОЗ*" +'\n' + str(match_result) + '\n' + '\n' +
+                                          "Ставка зайдет с вероятностью: " + str(match_probability) + "\nПроанализировано ресурсов: " + str(match_voices) + '\n' )
+                                    send_message(message)
+                                    match_names.add(match_name)
+                                    print(match_data, '\n', 'Время матча:', match_time, '\n', match_name, '\n',
+                                          match_result, '\n'
+                                                        "Ставка зайдет с вероятностью:", match_probability,
+                                          "\nПроанализировано ресурсов: ", match_voices, '\n'
+                                          )
 
     if count > 2:
         with open("games_dict.json", "w") as file: # перезаписываю проверочный словарь ссылками игр которые уже постили
                 json.dump(games_hrefs, file, indent=4, ensure_ascii=False)
+        with open(f"games_names.csv", "w", encoding="utf-8") as file:
+            writer = csv.writer(file)
+            writer.writerow(
+                (
+                    match_names,
+                )
+            )
 
     print("Пойду спать..")
-    time.sleep(900)
+    time.sleep(3600)
 
 print("Парсинг сломан")
 
